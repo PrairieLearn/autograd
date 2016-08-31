@@ -50,6 +50,9 @@ func main() {
 		graderCfg.Grader.CleanupCommands,
 		graderCfg.Grader.GradeTimeout)
 
+	sigterm := make(chan os.Signal)
+	signal.Notify(sigterm, syscall.SIGTERM)
+
 	isRunning := true
 	for isRunning {
 		c, err := consumer.NewConsumer(cfg.AMQP.URL, cfg.AMQP.GradingQueue, grader)
@@ -60,9 +63,6 @@ func main() {
 		}
 
 		log.Printf("running forever")
-
-		sigterm := make(chan os.Signal)
-		signal.Notify(sigterm, syscall.SIGTERM)
 
 		select {
 		case err := <-c.NotifyClose():

@@ -1,11 +1,11 @@
 amqp:
-    url: amqp://localhost:5672/
-    grading_queue: cs225-grade
-    results_queue: cs225-results
+  url: amqp://localhost:5672/
+  grading_queue: cs225-grade
+  results_queue: cs225-results
 grader_repo:
-    repo_url: git@github.com:kevinwang/pl-cs225-grader.git
-    commit: refs/remotes/origin/master
-    credentials:
-        public_key: /absolute/path/to/autograd_id_rsa.pub
-        private_key: /absolute/path/to/autograd_id_rsa
-        passphrase:
+  repo_url: git@github.com:kevinwang/pl-cs225-grader.git
+  commit: refs/remotes/origin/master
+  credentials:
+    public_key: /absolute/path/to/autograd_id_rsa.pub
+    private_key: /absolute/path/to/autograd_id_rsa
+    passphrase:

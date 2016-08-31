@@ -1,0 +1,11 @@
+grader:
+  setup_commands:
+    - ["env"]
+    - ["pwd"]
+    - ["echo", "setup 1"]
+    - ["echo", "$AUTOGRAD_GRADER_ROOT"]
+  grade_command: ["sleep", "5"]
+  grade_timeout: 10
+  cleanup_commands:
+    - ["echo", "cleanup 1"]
+    - ["echo", "cleanup 2"]

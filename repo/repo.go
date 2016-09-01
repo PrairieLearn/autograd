@@ -75,15 +75,17 @@ func initializeRepo(repoURL, path string, cloneOpts *git.CloneOptions) (*git.Rep
 	} else {
 		remote, err := repo.Remotes.Lookup("origin")
 		if err != nil || remote.Url() != repoURL {
-			err := os.RemoveAll(path)
-			if err != nil {
-				return nil, err
-			}
 			shouldClone = true
 		}
 	}
 
 	if shouldClone {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			err := os.RemoveAll(path)
+			if err != nil {
+				return nil, err
+			}
+		}
 		repo, err = git.Clone(repoURL, path, cloneOpts)
 		if err != nil {
 			return nil, err

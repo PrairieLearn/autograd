@@ -60,7 +60,7 @@ func expandArgs(argv []string, env map[string]string) []string {
 }
 
 func buildEnvSlice(envMap map[string]string) []string {
-	var env []string
+	env := os.Environ()
 	for key, val := range envMap {
 		env = append(env, key+"="+val)
 	}

@@ -67,7 +67,9 @@ func main() {
 			continue
 		}
 
-		log.Info("Listening for grading jobs")
+		log.WithFields(log.Fields{
+			"queue": cfg.AMQP.GradingQueue,
+		}).Info("Listening for grading jobs")
 
 		select {
 		case err := <-c.NotifyClose():

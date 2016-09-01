@@ -58,7 +58,7 @@ func NewConsumer(amqpURI, queueName string, grader *grader.Grader) (*Consumer, e
 		return nil, fmt.Errorf("Queue Consume: %s", err)
 	}
 
-	go c.handle(deliveries, c.done)
+	go c.handle(deliveries, queueName, c.done)
 
 	return c, nil
 }
@@ -83,9 +83,10 @@ func (c *Consumer) NotifyClose() chan *amqp.Error {
 	return c.conn.NotifyClose(make(chan *amqp.Error))
 }
 
-func (c *Consumer) handle(deliveries <-chan amqp.Delivery, done chan error) {
+func (c *Consumer) handle(deliveries <-chan amqp.Delivery, queueName string, done chan error) {
 	for d := range deliveries {
 		log.WithFields(log.Fields{
+			"queue":        queueName,
 			"size":         len(d.Body),
 			"delivery_tag": d.DeliveryTag,
 		}).Info("Received grading job")

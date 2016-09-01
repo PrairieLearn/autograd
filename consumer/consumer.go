@@ -2,8 +2,8 @@ package consumer
 
 import (
 	"fmt"
-	"log"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/streadway/amqp"
 
 	"github.com/PrairieLearn/autograd/grader"
@@ -30,17 +30,13 @@ func NewConsumer(amqpURI, queueName string, grader *grader.Grader) (*Consumer, e
 
 	var err error
 
-	log.Printf("dialing %q", amqpURI)
+	log.Debugf("Dialing %q", amqpURI)
 	c.conn, err = amqp.Dial(amqpURI)
 	if err != nil {
 		return nil, fmt.Errorf("Dial: %s", err)
 	}
 
-	go func() {
-		log.Printf("closing: %s", <-c.conn.NotifyClose(make(chan *amqp.Error)))
-	}()
-
-	log.Printf("got Connection, getting Channel")
+	log.Debugf("Got Connection, getting Channel")
 	c.channel, err = c.conn.Channel()
 	if err != nil {
 		return nil, fmt.Errorf("Channel: %s", err)
@@ -49,13 +45,13 @@ func NewConsumer(amqpURI, queueName string, grader *grader.Grader) (*Consumer, e
 		return nil, fmt.Errorf("Channel Qos: %s", err)
 	}
 
-	log.Printf("got Channel, declaring Queue %q", queueName)
+	log.Debugf("Got Channel, declaring Queue %q", queueName)
 	queue, err := c.channel.QueueDeclare(queueName, true, false, false, false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Queue Declare: %s", err)
 	}
 
-	log.Printf("declared Queue (%q %d messages, %d consumers), starting Consume (consumer tag %q)",
+	log.Debugf("Declared Queue (%q %d messages, %d consumers), starting Consume (consumer tag %q)",
 		queue.Name, queue.Messages, queue.Consumers, consumerTag)
 	deliveries, err := c.channel.Consume(queue.Name, consumerTag, false, false, false, false, nil)
 	if err != nil {
@@ -77,7 +73,7 @@ func (c *Consumer) Shutdown() error {
 		return fmt.Errorf("AMQP connection close error: %s", err)
 	}
 
-	defer log.Printf("AMQP shutdown OK")
+	defer log.Debugf("AMQP shutdown OK")
 
 	// wait for handle() to exit
 	return <-c.done
@@ -89,19 +85,18 @@ func (c *Consumer) NotifyClose() chan *amqp.Error {
 
 func (c *Consumer) handle(deliveries <-chan amqp.Delivery, done chan error) {
 	for d := range deliveries {
-		log.Printf(
-			"got %dB delivery: [%v] %q",
-			len(d.Body),
-			d.DeliveryTag,
-			d.Body,
-		)
+		log.WithFields(log.Fields{
+			"size":         len(d.Body),
+			"delivery_tag": d.DeliveryTag,
+		}).Info("Received grading job")
+		log.Debug(string(d.Body))
 
 		if err := c.grader.Grade(d.Body); err != nil {
-			log.Printf("Error initializing grader: %v", err)
+			log.Warnf("Error initializing grader: %v", err)
 		}
 
 		d.Ack(false)
 	}
-	log.Printf("handle: deliveries channel closed")
+	log.Debugf("handle: deliveries channel closed")
 	done <- nil
 }

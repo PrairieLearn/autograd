@@ -1,9 +1,9 @@
 package repo
 
 import (
-	"log"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"gopkg.in/libgit2/git2go.v24"
 
 	"github.com/PrairieLearn/autograd/grader"
@@ -12,7 +12,7 @@ import (
 func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase string) error {
 	path := grader.GetGraderRoot(autogradRoot)
 
-	log.Printf("Syncing grader repo %s", repoURL)
+	log.Infof("Syncing grader repo %s", repoURL)
 
 	callbacks := git.RemoteCallbacks{
 		CertificateCheckCallback: makeCertificateCheckCallback(),
@@ -35,7 +35,7 @@ func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase strin
 		return err
 	}
 
-	log.Println("Fetching remote origin")
+	log.Debug("Fetching remote origin")
 	err = fetchOrigin(repo, fetchOpts)
 
 	if isSHA1Hash(commit) {
@@ -52,7 +52,7 @@ func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase strin
 		}
 	}
 
-	log.Printf("Checking out commit/ref '%s'", commit)
+	log.Debug("Checking out commit/ref '%s'", commit)
 	if err := repo.CheckoutHead(checkoutOpts); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase strin
 	if err != nil {
 		return err
 	}
-	log.Printf("Repo sync success, HEAD at %s", head.Target().String())
+	log.Infof("Repo sync success, HEAD at %s", head.Target().String())
 
 	return nil
 }

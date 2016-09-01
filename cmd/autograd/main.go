@@ -1,11 +1,12 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/PrairieLearn/autograd/config"
 	"github.com/PrairieLearn/autograd/consumer"
@@ -13,6 +14,10 @@ import (
 	graderconfig "github.com/PrairieLearn/autograd/grader/config"
 	"github.com/PrairieLearn/autograd/repo"
 )
+
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
 
 func main() {
 	autogradRoot, err := config.GetAutogradRoot()
@@ -57,25 +62,25 @@ func main() {
 	for isRunning {
 		c, err := consumer.NewConsumer(cfg.AMQP.URL, cfg.AMQP.GradingQueue, grader)
 		if err != nil {
-			log.Printf("%s", err)
+			log.Warnf("Error initializing AMQP consumer: %s", err)
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		log.Printf("running forever")
+		log.Info("Listening for grading jobs")
 
 		select {
 		case err := <-c.NotifyClose():
-			log.Printf("closing: %s", err)
+			log.Warnf("Closing consumer: %s", err)
 		case <-sigterm:
-			log.Printf("Received SIGTERM, finishing last job")
+			log.Info("Received SIGTERM, finishing last job")
 			isRunning = false
 		}
 
-		log.Printf("shutting down")
+		log.Infof("Shutting down AMQP connection")
 
 		if err := c.Shutdown(); err != nil {
-			log.Printf("error during shutdown: %s", err)
+			log.Warnf("Error during shutdown: %s", err)
 		}
 	}
 }

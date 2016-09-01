@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"syscall"
@@ -22,7 +23,8 @@ func RunCommand(argv []string, dir string, env map[string]string, timeout time.D
 	cmd.Env = buildEnvSlice(env)
 
 	var out bytes.Buffer
-	cmd.Stdout = &out
+	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
+	cmd.Stderr = io.MultiWriter(os.Stdout, &out)
 
 	if err := cmd.Start(); err != nil {
 		return nil, 0, err

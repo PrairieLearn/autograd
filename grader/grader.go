@@ -97,20 +97,14 @@ func runCommands(commands [][]string, jobDir string, env map[string]string, gid,
 		log.WithFields(log.Fields{
 			"gid":  gid,
 			"step": fmt.Sprintf("%s[%d]", stage, i),
-			"type": "command",
 		}).Info(strings.Join(argv, " "))
-		out, _, err := RunCommand(argv, jobDir, env, 1*time.Minute)
+		_, _, err := RunCommand(argv, jobDir, env, 5*time.Minute)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"gid":  gid,
 				"step": fmt.Sprintf("%s[%d]", stage, i),
 			}).Warn(err)
 		}
-		log.WithFields(log.Fields{
-			"gid":  gid,
-			"step": fmt.Sprintf("%s[%d]", stage, i),
-			"type": "output",
-		}).Debug(strings.TrimSuffix(out.String(), "\n"))
 	}
 }
 
@@ -119,7 +113,6 @@ func runGradeCommand(argv []string, jobDir string, env map[string]string, gid st
 	log.WithFields(log.Fields{
 		"gid":  gid,
 		"step": "grade",
-		"type": "command",
 	}).Info(strings.Join(argv, " "))
 	out, exitCode, err := RunCommand(argv, jobDir, env, timeout)
 	if err != nil {
@@ -128,11 +121,6 @@ func runGradeCommand(argv []string, jobDir string, env map[string]string, gid st
 			"stage": "grade",
 		}).Warn(err)
 	}
-	log.WithFields(log.Fields{
-		"gid":  gid,
-		"step": "grade",
-		"type": "output",
-	}).Debug(strings.TrimSuffix(out.String(), "\n"))
 
 	log.WithFields(log.Fields{
 		"gid":   gid,

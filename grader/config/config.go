@@ -16,6 +16,7 @@ type Config struct {
 }
 
 type GraderConfig struct {
+	InitCommands    [][]string `yaml:"init_commands"`
 	SetupCommands   [][]string `yaml:"setup_commands"`
 	GradeCommand    []string   `yaml:"grade_command"`
 	CleanupCommands [][]string `yaml:"cleanup_commands"`

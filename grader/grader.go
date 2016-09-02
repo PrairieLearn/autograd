@@ -3,7 +3,6 @@ package grader
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,10 +12,17 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+type Stage string
+
 const (
 	graderDir   = "_grader"
 	jobPrefix   = "job_"
 	jobFileName = "job_data.json"
+
+	InitStage    Stage = "init"
+	SetupStage   Stage = "setup"
+	GradeStage   Stage = "grade"
+	CleanupStage Stage = "cleanup"
 )
 
 type Grader struct {
@@ -70,9 +76,9 @@ func (g *Grader) Grade(jobData []byte) error {
 		"AUTOGRAD_JOB_DIR":     jobDir,
 	}
 
-	runCommands(g.setupCommands, jobDir, env, gid, "setup")
+	RunCommands(g.setupCommands, jobDir, env, gid, "setup")
 	runGradeCommand(g.gradeCommand, jobDir, env, gid, g.gradeTimeout)
-	runCommands(g.cleanupCommands, jobDir, env, gid, "cleanup")
+	RunCommands(g.cleanupCommands, jobDir, env, gid, "cleanup")
 
 	return nil
 }
@@ -92,29 +98,17 @@ func parseGID(jobData []byte) (string, error) {
 	return job.GID, nil
 }
 
-func runCommands(commands [][]string, jobDir string, env map[string]string, gid, stage string) {
-	for i, argv := range commands {
-		log.WithFields(log.Fields{
-			"gid":  gid,
-			"step": fmt.Sprintf("%s[%d]", stage, i),
-		}).Info(strings.Join(argv, " "))
-		_, _, err := RunCommand(argv, jobDir, env, 5*time.Minute)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"gid":  gid,
-				"step": fmt.Sprintf("%s[%d]", stage, i),
-			}).Warn(err)
-		}
-	}
-}
-
 func runGradeCommand(argv []string, jobDir string, env map[string]string, gid string, timeout time.Duration) (
 	int, string) {
 	log.WithFields(log.Fields{
+		"gid": gid,
+	}).Infof("Running grade command")
+
+	log.WithFields(log.Fields{
 		"gid":  gid,
-		"step": "grade",
+		"step": GradeStage,
 	}).Info(strings.Join(argv, " "))
-	out, exitCode, err := RunCommand(argv, jobDir, env, timeout)
+	out, exitCode, err := execWithTimeout(argv, jobDir, env, timeout)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"gid":   gid,
@@ -124,7 +118,7 @@ func runGradeCommand(argv []string, jobDir string, env map[string]string, gid st
 
 	log.WithFields(log.Fields{
 		"gid":   gid,
-		"step":  "grade",
+		"step":  GradeStage,
 		"score": exitCode,
 	}).Info("Grade command exited")
 

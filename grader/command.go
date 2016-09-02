@@ -7,11 +7,32 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
-func RunCommand(argv []string, dir string, env map[string]string, timeout time.Duration) (*bytes.Buffer, int, error) {
+func RunCommands(commands [][]string, jobDir string, env map[string]string, gid string, stage Stage) {
+	fields := make(log.Fields)
+	if gid != "" {
+		fields["gid"] = gid
+	}
+
+	log.WithFields(fields).Infof("Running %s commands", stage)
+
+	for i, argv := range commands {
+		fields["command"] = fmt.Sprintf("%s[%d]", stage, i)
+		log.WithFields(fields).Info(strings.Join(argv, " "))
+		_, _, err := execWithTimeout(argv, jobDir, env, 5*time.Minute)
+		if err != nil {
+			log.WithFields(fields).Warn(err)
+		}
+	}
+}
+
+func execWithTimeout(argv []string, dir string, env map[string]string, timeout time.Duration) (*bytes.Buffer, int, error) {
 	if len(argv) == 0 {
 		return nil, 0, errors.New("Empty command")
 	}

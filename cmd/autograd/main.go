@@ -43,10 +43,19 @@ func main() {
 		log.Fatalf("Failed to sync grader repo: %s", err)
 	}
 
-	graderCfg, err := graderconfig.Load(grader.GetGraderRoot(autogradRoot))
+	graderRoot := grader.GetGraderRoot(autogradRoot)
+
+	graderCfg, err := graderconfig.Load(graderRoot)
 	if err != nil {
 		log.Fatalf("Failed to load grader config: %s", err)
 	}
+
+	grader.RunCommands(
+		graderCfg.Grader.InitCommands,
+		graderRoot,
+		map[string]string{"AUTOGRAD_GRADER_ROOT": graderRoot},
+		"",
+		grader.InitStage)
 
 	grader := grader.New(
 		autogradRoot,

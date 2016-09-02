@@ -11,6 +11,7 @@ import (
 
 const (
 	autogradRootEnvKey = "AUTOGRAD_ROOT"
+	configDir          = "_conf"
 	configFileName     = "configuration.yml"
 )
 
@@ -23,7 +24,7 @@ func GetAutogradRoot() (string, error) {
 }
 
 func Load(autogradRoot string) (*Config, error) {
-	file, err := ioutil.ReadFile(filepath.Join(autogradRoot, configFileName))
+	file, err := ioutil.ReadFile(filepath.Join(autogradRoot, configDir, configFileName))
 	if err != nil {
 		return nil, err
 	}

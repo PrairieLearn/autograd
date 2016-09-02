@@ -52,7 +52,7 @@ func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase strin
 		}
 	}
 
-	log.Debug("Checking out commit/ref '%s'", commit)
+	log.Debugf("Checking out commit/ref '%s'", commit)
 	if err := repo.CheckoutHead(checkoutOpts); err != nil {
 		return err
 	}

@@ -76,7 +76,10 @@ func expandArgs(argv []string, env map[string]string) []string {
 	expandedArgv := make([]string, len(argv))
 	for i, arg := range argv {
 		expandedArgv[i] = os.Expand(arg, func(key string) string {
-			return env[key]
+			if val, ok := env[key]; ok {
+				return val
+			}
+			return os.Getenv(key)
 		})
 	}
 	return expandedArgv

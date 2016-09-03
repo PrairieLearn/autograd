@@ -1,4 +1,8 @@
 grader:
+  init_commands:
+    - ["echo", "apt-get install x y z"]
+    - ["adduser", "--system", "--no-create-home", "autograd-user"]
+    - ["chmod", "-R", "o-r", "$AUTOGRAD_ROOT"]
   setup_commands:
     - ["env"]
     - ["pwd"]

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autograd-cs225-config
+  namespace: default
+data:
+  configuration.yml: |-
+    amqp:
+      url: amqp://rabbitmq-service:5672/
+      grading_queue: cs225-grade
+      result_queue: cs225-result
+    grader_repo:
+      repo_url: git@github.com:kevinwang/pl-cs225-grader.git
+      commit: refs/remotes/origin/master
+      credentials:
+        public_key: /opt/autograd/_ssh/id_rsa.pub
+        private_key: /opt/autograd/_ssh/id_rsa
+        passphrase:

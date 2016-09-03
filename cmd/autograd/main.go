@@ -8,8 +8,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
+	"github.com/PrairieLearn/autograd/amqp"
 	"github.com/PrairieLearn/autograd/config"
-	"github.com/PrairieLearn/autograd/consumer"
 	"github.com/PrairieLearn/autograd/grader"
 	graderconfig "github.com/PrairieLearn/autograd/grader/config"
 	"github.com/PrairieLearn/autograd/repo"
@@ -69,9 +69,13 @@ func main() {
 
 	isRunning := true
 	for isRunning {
-		c, err := consumer.NewConsumer(cfg.AMQP.URL, cfg.AMQP.GradingQueue, grader)
+		c, err := amqp.NewClient(
+			cfg.AMQP.URL,
+			cfg.AMQP.GradingQueue,
+			cfg.AMQP.ResultQueue,
+			grader)
 		if err != nil {
-			log.Warnf("Error initializing AMQP consumer: %s", err)
+			log.Warnf("Error initializing AMQP client: %s", err)
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -82,7 +86,7 @@ func main() {
 
 		select {
 		case err := <-c.NotifyClose():
-			log.Warnf("Closing consumer: %s", err)
+			log.Warnf("Closing client: %s", err)
 		case <-sigterm:
 			log.Info("Received SIGTERM, finishing last job")
 			isRunning = false

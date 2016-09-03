@@ -33,6 +33,16 @@ type Grader struct {
 	gradeTimeout    time.Duration
 }
 
+type Result struct {
+	GID     string  `json:"gid"`
+	Grading Grading `json:"grading"`
+}
+
+type Grading struct {
+	Score    int    `json:"score"`
+	Feedback []byte `json:"feedback"`
+}
+
 func New(autogradRoot string, setupCommands [][]string, gradeCommand []string, cleanupCommands [][]string,
 	gradeTimeout int) *Grader {
 	return &Grader{
@@ -44,15 +54,15 @@ func New(autogradRoot string, setupCommands [][]string, gradeCommand []string, c
 	}
 }
 
-func (g *Grader) Grade(jobData []byte) error {
+func (g *Grader) Grade(jobData []byte) (*Result, error) {
 	gid, err := parseGID(jobData)
 	if err != nil {
-		return errors.New("Error parsing gid from job data")
+		return nil, errors.New("Error parsing gid from job data")
 	}
 
 	jobDir, err := ioutil.TempDir(g.autogradRoot, jobPrefix)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		if err := os.RemoveAll(jobDir); err != nil {
@@ -63,7 +73,7 @@ func (g *Grader) Grade(jobData []byte) error {
 	jobFilePath := filepath.Join(jobDir, jobFileName)
 	err = ioutil.WriteFile(jobFilePath, jobData, 0644)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		if err := os.Remove(jobFilePath); err != nil {
@@ -77,10 +87,16 @@ func (g *Grader) Grade(jobData []byte) error {
 	}
 
 	RunCommands(g.setupCommands, jobDir, env, gid, "setup")
-	runGradeCommand(g.gradeCommand, jobDir, env, gid, g.gradeTimeout)
+	score, feedback := runGradeCommand(g.gradeCommand, jobDir, env, gid, g.gradeTimeout)
 	RunCommands(g.cleanupCommands, jobDir, env, gid, "cleanup")
 
-	return nil
+	return &Result{
+		GID: gid,
+		Grading: Grading{
+			Score:    score,
+			Feedback: feedback,
+		},
+	}, nil
 }
 
 func GetGraderRoot(autogradRoot string) string {
@@ -99,7 +115,7 @@ func parseGID(jobData []byte) (string, error) {
 }
 
 func runGradeCommand(argv []string, jobDir string, env map[string]string, gid string, timeout time.Duration) (
-	int, string) {
+	int, []byte) {
 	log.WithFields(log.Fields{
 		"gid": gid,
 	}).Infof("Running grade command")
@@ -122,5 +138,5 @@ func runGradeCommand(argv []string, jobDir string, env map[string]string, gid st
 		"score": exitCode,
 	}).Info("Grade command exited")
 
-	return exitCode, out.String()
+	return exitCode, out.Bytes()
 }

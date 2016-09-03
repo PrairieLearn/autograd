@@ -8,7 +8,7 @@ type Config struct {
 type AMQPConfig struct {
 	URL          string `yaml:"url"`
 	GradingQueue string `yaml:"grading_queue"`
-	ResultsQueue string `yaml:"results_queue"`
+	ResultQueue  string `yaml:"result_queue"`
 }
 
 type GraderRepoConfig struct {

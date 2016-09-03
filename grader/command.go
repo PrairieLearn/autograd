@@ -47,8 +47,10 @@ func execWithTimeout(argv []string, dir string, env map[string]string, timeout t
 	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
 	cmd.Stderr = io.MultiWriter(os.Stdout, &out)
 
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
 	if err := cmd.Start(); err != nil {
-		return nil, 0, err
+		return &out, 0, err
 	}
 	done := make(chan error)
 	go func() { done <- cmd.Wait() }()
@@ -60,15 +62,15 @@ func execWithTimeout(argv []string, dir string, env map[string]string, timeout t
 					return &out, status.ExitStatus(), nil
 				}
 			}
-			return nil, 0, err
+			return &out, 0, err
 		}
 		return &out, 0, nil
 	case <-time.After(timeout):
-		if err := cmd.Process.Kill(); err != nil {
-			return nil, 0, fmt.Errorf("Command timed out (%s), failed to kill process: %v",
+		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+			return &out, 0, fmt.Errorf("Command timed out (%s), failed to kill process: %v",
 				timeout.String(), err)
 		}
-		return nil, 0, fmt.Errorf("Command timed out (%s), process killed", timeout.String())
+		return &out, 0, fmt.Errorf("Command timed out (%s), process killed", timeout.String())
 	}
 }
 

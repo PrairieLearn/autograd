@@ -38,21 +38,16 @@ func Sync(repoURL, commit, autogradRoot, publicKey, privateKey, passphrase strin
 	log.Debug("Fetching remote origin")
 	err = fetchOrigin(repo, fetchOpts)
 
-	if isSHA1Hash(commit) {
-		oid, err := git.NewOid(commit)
-		if err != nil {
-			return err
-		}
-		if err := repo.SetHeadDetached(oid); err != nil {
-			return err
-		}
-	} else {
-		if err := repo.SetHead(commit); err != nil {
-			return err
-		}
+	obj, err := repo.RevparseSingle(commit)
+	if err != nil {
+		return err
 	}
 
 	log.Debugf("Checking out commit/ref '%s'", commit)
+	if err := repo.SetHeadDetached(obj.Id()); err != nil {
+		return err
+	}
+
 	if err := repo.CheckoutHead(checkoutOpts); err != nil {
 		return err
 	}
@@ -117,8 +112,4 @@ func makeCredentialsCallback(publicKey, privateKey, passphrase string) git.Crede
 		errCode, cred := git.NewCredSshKey(username_from_url, publicKey, privateKey, passphrase)
 		return git.ErrorCode(errCode), &cred
 	}
-}
-
-func isSHA1Hash(s string) bool {
-	return len(s) == 40
 }

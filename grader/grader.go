@@ -1,8 +1,6 @@
 package grader
 
 import (
-	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -54,12 +52,7 @@ func New(autogradRoot string, setupCommands [][]string, gradeCommand []string, c
 	}
 }
 
-func (g *Grader) Grade(jobData []byte) (*Result, error) {
-	gid, err := parseGID(jobData)
-	if err != nil {
-		return nil, errors.New("Error parsing gid from job data")
-	}
-
+func (g *Grader) Grade(gid string, jobData []byte) (*Result, error) {
 	jobDir, err := ioutil.TempDir(g.autogradRoot, jobPrefix)
 	if err != nil {
 		return nil, err
@@ -101,17 +94,6 @@ func (g *Grader) Grade(jobData []byte) (*Result, error) {
 
 func GetGraderRoot(autogradRoot string) string {
 	return filepath.Join(autogradRoot, graderDir)
-}
-
-func parseGID(jobData []byte) (string, error) {
-	var job struct {
-		GID string `json:"gid"`
-	}
-	err := json.Unmarshal(jobData, &job)
-	if err != nil {
-		return "", err
-	}
-	return job.GID, nil
 }
 
 func runGradeCommand(argv []string, jobDir string, env map[string]string, gid string, timeout time.Duration) (

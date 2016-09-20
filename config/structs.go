@@ -8,6 +8,7 @@ type Config struct {
 type AMQPConfig struct {
 	URL          string `yaml:"url"`
 	GradingQueue string `yaml:"grading_queue"`
+	StartedQueue string `yaml:"started_queue"`
 	ResultQueue  string `yaml:"result_queue"`
 }
 

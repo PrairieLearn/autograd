@@ -19,12 +19,14 @@ type Client struct {
 	conn         *amqp.Connection
 	channel      *amqp.Channel
 	gradingQueue amqp.Queue
+	startedQueue amqp.Queue
 	resultQueue  amqp.Queue
 	grader       *grader.Grader
 	done         chan error
 }
 
-func NewClient(amqpURI, gradingQueueName, resultQueueName string, grader *grader.Grader) (*Client, error) {
+func NewClient(amqpURI, gradingQueueName, startedQueueName, resultQueueName string, grader *grader.Grader) (
+	*Client, error) {
 	c := &Client{
 		conn:    nil,
 		channel: nil,
@@ -49,8 +51,13 @@ func NewClient(amqpURI, gradingQueueName, resultQueueName string, grader *grader
 		return nil, fmt.Errorf("Channel Qos: %s", err)
 	}
 
-	log.Debugf("Got Channel, declaring Queues %q, %q", gradingQueueName, resultQueueName)
+	log.Debugf("Got Channel, declaring Queues %q, %q, %q", gradingQueueName, startedQueueName, resultQueueName)
 	c.gradingQueue, err = c.channel.QueueDeclare(gradingQueueName, true, false, false, false, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Queue Declare: %s", err)
+	}
+
+	c.startedQueue, err = c.channel.QueueDeclare(startedQueueName, true, false, false, false, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Queue Declare: %s", err)
 	}
@@ -101,31 +108,64 @@ func (c *Client) handle(deliveries <-chan amqp.Delivery, done chan error) {
 		}).Info("Received grading job")
 		log.Debug(string(d.Body))
 
-		result, err := c.grader.Grade(d.Body)
+		gid, err := parseGID(d.Body)
+		if err != nil {
+			log.Warnf("Error parsing gid from job data: %v", err)
+			continue
+		}
+
+		if err := c.publishJSON(c.startedQueue, StartedMessage{
+			GID:  gid,
+			Time: time.Now().Format(time.RFC3339),
+		}); err != nil {
+			log.Warnf("Error publishing started message: %v", err)
+			continue
+		}
+
+		result, err := c.grader.Grade(gid, d.Body)
 		if err != nil {
 			log.Warnf("Error initializing grader: %v", err)
 			continue
 		}
 
-		resultJSON, err := json.Marshal(result)
-		if err != nil {
-			log.Warnf("Error marshalling grading result: %v", err)
+		if err := c.publishJSON(c.resultQueue, result); err != nil {
+			log.Warnf("Error publishing grading result: %v", err)
 			continue
-		}
-
-		msg := amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			Timestamp:    time.Now(),
-			ContentType:  "application/json",
-			Body:         resultJSON,
-		}
-		err = c.channel.Publish("", c.resultQueue.Name, false, false, msg)
-		if err != nil {
-			log.Warnf("Error publishing message to queue: %v", err)
 		}
 
 		d.Ack(false)
 	}
 	log.Debugf("handle: deliveries channel closed")
 	done <- nil
+}
+
+func (c *Client) publishJSON(queue amqp.Queue, body interface{}) error {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	msg := amqp.Publishing{
+		DeliveryMode: amqp.Persistent,
+		Timestamp:    time.Now(),
+		ContentType:  "application/json",
+		Body:         jsonBody,
+	}
+	err = c.channel.Publish("", queue.Name, false, false, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseGID(jobData []byte) (string, error) {
+	var job struct {
+		GID string `json:"gid"`
+	}
+	err := json.Unmarshal(jobData, &job)
+	if err != nil {
+		return "", err
+	}
+	return job.GID, nil
 }

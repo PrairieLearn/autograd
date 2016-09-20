@@ -1,6 +1,7 @@
 amqp:
   url: amqp://localhost:5672/
   grading_queue: cs225-grade
+  started_queue: cs225-started
   result_queue: cs225-result
 grader_repo:
   repo_url: git@github.com:kevinwang/pl-cs225-grader.git

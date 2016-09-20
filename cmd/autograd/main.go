@@ -72,6 +72,7 @@ func main() {
 		c, err := amqp.NewClient(
 			cfg.AMQP.URL,
 			cfg.AMQP.GradingQueue,
+			cfg.AMQP.StartedQueue,
 			cfg.AMQP.ResultQueue,
 			grader)
 		if err != nil {

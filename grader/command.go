@@ -25,7 +25,7 @@ func RunCommands(commands [][]string, jobDir string, env map[string]string, gid 
 	for i, argv := range commands {
 		fields["command"] = fmt.Sprintf("%s[%d]", stage, i)
 		log.WithFields(fields).Info(strings.Join(argv, " "))
-		_, _, err := execWithTimeout(argv, jobDir, env, 5*time.Minute)
+		_, _, err := execWithTimeout(argv, jobDir, env, 30*time.Minute)
 		if err != nil {
 			log.WithFields(fields).Warn(err)
 		}

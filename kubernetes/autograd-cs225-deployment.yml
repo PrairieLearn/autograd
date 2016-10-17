@@ -1,16 +1,16 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: autograd
+  name: autograd-cs225
 spec:
-  replicas: 3
+  replicas: 6
   template:
     metadata:
       labels:
-        app: autograd
+        app: autograd-cs225
     spec:
       containers:
-        - name: autograd
+        - name: autograd-cs225
           image: prairielearn/autograd
           volumeMounts:
             - name: config-volume
@@ -27,8 +27,3 @@ spec:
         - name: ssh-keys
           secret:
             secretName: autograd-ssh-keys
-            items:
-              - key: ssh-publickey
-                path: id_rsa.pub
-              - key: ssh-privatekey
-                path: id_rsa

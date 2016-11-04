@@ -5,8 +5,8 @@ amqp:
   result_queue: cs225-result
 grader_repo:
   repo_url: git@github.com:kevinwang/pl-cs225-grader.git
-  commit: refs/remotes/origin/master
+  commit: origin/master
   credentials:
-    public_key: /absolute/path/to/autograd_id_rsa.pub
-    private_key: /absolute/path/to/autograd_id_rsa
+    public_key: /opt/autograd/_ssh/ssh-publickey
+    private_key: /opt/autograd/_ssh/ssh-privatekey
     passphrase:

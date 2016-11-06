@@ -84,6 +84,41 @@ job:
 }
 ```
 
+## Building autograd (Linux and OS X)
+
+- Install:
+    - `go` version at least 1.7
+    - `libgit2`
+
+- Set up the go path structure:
+
+    ```shell
+    mkdir ~/go
+    export GOPATH=~/go
+    ```
+
+- Download autograd:
+
+    ```shell
+    mkdir -p ~/go/src/github.com/PrairieLearn
+    cd ~/go/src/github.com/PrairieLearn
+    git clone git@github.com:PrairieLearn/autograd
+    ```
+
+- Compile and install autograd:
+
+    ```shell
+    cd ~/go/src/github.com/PrairieLearn/autograd
+    go install ./...
+    ```
+
+- Run autograd
+
+    ```shell
+    cd ~/go/bin
+    ./autograd
+    ```
+
 ## Development
 
 ### Dependencies
